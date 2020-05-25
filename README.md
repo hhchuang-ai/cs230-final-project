@@ -1,5 +1,7 @@
 # cs230-final-project
-It's basically the implementation from https://github.com/taki0112/UGATIT with some minor tuning/changes. We added some noise in d_loss in UGATIT.py. Every 100 iteration, we will introduce noise into discriminator because the discriminator loss far better than generator noise for our own dataset.
+Our poject is built on top of https://github.com/taki0112/UGATIT with some minor tuning/changes. If you want to take the code as reference, please cite https://github.com/taki0112/UGATIT.
+
+We added some noise in d_loss in UGATIT.py. Every 100 iteration, we will introduce noise into discriminator because the discriminator loss far better than generator noise for our own dataset.
 
 ## Requirements
 * python == 3.6
@@ -28,7 +30,7 @@ getLoss.py: sieze the statistic data of loss from output log.
 
 
 ## Citation
-If you find this code useful for your research, please cite Junho Kim's paper:
+If you find this code useful for your research, please cite Junho Kim's paper and their Github[link](https://github.com/taki0112/UGATIT):
 
 ```
 @inproceedings{
@@ -40,5 +42,7 @@ year={2020},
 url={https://openreview.net/forum?id=BJlZ5ySKPH}
 }
 ```
-## Authors of original paper
+
+## Authors of the original paper
 [Junho Kim](http://bit.ly/jhkim_ai), Minjae Kim, Hyeonwoo Kang, Kwanghee Lee
+
