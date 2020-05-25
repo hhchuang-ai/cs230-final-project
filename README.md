@@ -3,11 +3,44 @@ Our poject is built on top of the [Github](https://github.com/taki0112/UGATIT) w
 
 We added some noise in d_loss in UGATIT.py. Every 100 iteration, we will introduce noise into discriminator because the discriminator loss far better than generator noise for our own dataset.
 
+## Tools
+resize.py: resize the image to be 256 with jpeg format.
+
+resizePng.py: resize the image to be 256 with png format.
+
+getLoss.py: sieze the statistic data of loss from output log.
+
 Most of the instruction below this line comes from the [Github](https://github.com/taki0112/UGATIT).
 ___
 ## Requirements
 * python == 3.6
 * tensorflow == 1.14
+
+
+## Usage
+The structure is as following:
+```
+├── dataset
+   └── YOUR_DATASET_NAME
+       ├── trainA
+           ├── xxx.jpg (name, format doesn't matter)
+           ├── yyy.png
+           └── ...
+       ├── trainB
+           ├── zzz.jpg
+           ├── www.png
+           └── ...
+       ├── testA
+           ├── aaa.jpg 
+           ├── bbb.png
+           └── ...
+       └── testB
+           ├── ccc.jpg 
+           ├── ddd.png
+           └── ...
+```
+PS:
+There is a dataset called "sample" for your reference.
 
 ### Train
 ```
