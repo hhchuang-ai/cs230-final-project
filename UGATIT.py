@@ -388,6 +388,7 @@ class UGATIT(object) :
             G_ad_loss_B = (generator_loss(self.gan_type, fake_B_logit) + generator_loss(self.gan_type, fake_B_cam_logit))
 
             self.fool_discriminator_counter = tf.placeholder(tf.int32, name = "fool_discriminator_counter")
+            # Every 100 iterations, we introduce noise to discriminator, so the generator loss can catch up discriminator loss.
             fool_dis = tf.cast((self.fool_discriminator_counter % 100 == 0), tf.bool)
             D_ad_loss_A = tf.cond(fool_dis, lambda: (discriminator_loss(self.gan_type, fake_A_logit, real_A_logit) + discriminator_loss(self.gan_type, fake_A_cam_logit, real_A_cam_logit) + GP_A + GP_CAM_A), lambda: (discriminator_loss(self.gan_type, real_A_logit, fake_A_logit) + discriminator_loss(self.gan_type, real_A_cam_logit, fake_A_cam_logit) + GP_A + GP_CAM_A))
             D_ad_loss_B = tf.cond(fool_dis, lambda: (discriminator_loss(self.gan_type, fake_B_logit, real_B_logit) + discriminator_loss(self.gan_type, fake_B_cam_logit, real_B_cam_logit) + GP_B + GP_CAM_B), lambda: (discriminator_loss(self.gan_type, real_B_logit, fake_B_logit) + discriminator_loss(self.gan_type, real_B_cam_logit, fake_B_cam_logit) + GP_B + GP_CAM_B))
@@ -530,6 +531,7 @@ class UGATIT(object) :
                 train_feed_dict = {
                     self.lr : lr
                 }
+                # discriminator_counter is included for adding noise.
                 train_feed_dict_d = {
                     self.lr : lr, #/100
                     self.fool_discriminator_counter : fool_discriminator_ctr
