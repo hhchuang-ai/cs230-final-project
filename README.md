@@ -19,6 +19,11 @@ It's basically the implementation from https://github.com/taki0112/UGATIT with s
 ```
 * If we set `--light` to **True** in training phase, we also need to set up  `--light` to **True** in test phase.
 
+## Tools
+resize.py: resize the image to be 256 with jpeg format.
+resizePng.py: resize the image to be 256 with png format.
+getLoss.py: sieze the statistic data of loss from output log.
+
 ## Citation
 If you find this code useful for your research, please cite Junho Kim's paper:
 
