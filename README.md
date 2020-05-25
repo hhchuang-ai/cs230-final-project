@@ -1,5 +1,5 @@
 # cs230-final-project
-Our poject is built on top of https://github.com/taki0112/UGATIT with some minor tuning/changes. If you want to take the code as reference, please cite the [paper](https://openreview.net/forum?id=BJlZ5ySKPH) and the [github](https://github.com/taki0112/UGATIT).
+Our poject is built on top of https://github.com/taki0112/UGATIT with some minor tuning/changes. If you want to take the code as reference, please cite the [Paper](https://openreview.net/forum?id=BJlZ5ySKPH) and the [Github](https://github.com/taki0112/UGATIT).
 
 We added some noise in d_loss in UGATIT.py. Every 100 iteration, we will introduce noise into discriminator because the discriminator loss far better than generator noise for our own dataset.
 
