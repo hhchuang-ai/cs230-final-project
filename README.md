@@ -10,7 +10,9 @@ resizePng.py: resize the image to be 256 with png format.
 
 getLoss.py: sieze the statistic data of loss from output log.
 
-Most of the instruction below this line comes from the [Github](https://github.com/taki0112/UGATIT).
+
+
+Most of the instructions below this line come from the [Github](https://github.com/taki0112/UGATIT).
 ___
 ## Requirements
 * python == 3.6
