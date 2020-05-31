@@ -352,10 +352,12 @@ class UGATIT(object) :
             """ Input Image"""
             Image_Data_Class = ImageData(self.img_size, self.img_ch, self.augment_flag)
 
+            # TODO(jhhuang): we should change how we load data here
             trainA = tf.data.Dataset.from_tensor_slices(self.trainA_dataset)
             trainB = tf.data.Dataset.from_tensor_slices(self.trainB_dataset)
 
 
+            # TODO(jhhuang): change GPU devices
             gpu_device = '/gpu:0'
             trainA = trainA.apply(shuffle_and_repeat(self.dataset_num)).apply(map_and_batch(Image_Data_Class.image_processing, self.batch_size, num_parallel_batches=16, drop_remainder=True)).apply(prefetch_to_device(gpu_device))
             trainB = trainB.apply(shuffle_and_repeat(self.dataset_num)).apply(map_and_batch(Image_Data_Class.image_processing, self.batch_size, num_parallel_batches=16, drop_remainder=True)).apply(prefetch_to_device(gpu_device))
@@ -375,6 +377,7 @@ class UGATIT(object) :
             self.Generator_loss = []
             self.G_loss = []
 
+            # TODO(jhhuang): revisit the for-loop
             for i in range(8):
                 with tf.device(assign_to_device('/gpu:{}'.format(i), ps_device='/cpu:0')):
                     if i < 7:
