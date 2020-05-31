@@ -10,6 +10,7 @@ dataset/
 selfie2anime_backup/
 selfie2pokemon_backup2/
 logs/
+a/
 
 # C extensions
 *.so
