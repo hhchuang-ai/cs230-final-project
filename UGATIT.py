@@ -2,6 +2,8 @@ from ops import *
 from utils import *
 from glob import glob
 import time
+import math
+import sys
 from tensorflow.contrib.data import prefetch_to_device, shuffle_and_repeat, map_and_batch
 import numpy as np
 
@@ -52,6 +54,7 @@ class UGATIT(object) :
         self.n_critic = args.n_critic
         self.sn = args.sn
 
+
         self.img_size = args.img_size
         self.img_ch = args.img_ch
         #self.fool_discriminator_counter = 1
@@ -64,6 +67,8 @@ class UGATIT(object) :
         self.trainB_dataset = glob('./dataset/{}/*.*'.format(self.dataset_name + '/trainB'))
         self.dataset_num = max(len(self.trainA_dataset), len(self.trainB_dataset))
 
+        # New arg
+        self.use_pretrained = args.use_pretrained
         print()
 
         print("##### Information #####")
@@ -108,7 +113,7 @@ class UGATIT(object) :
             x = relu(x)
 
             # Down-Sampling
-            for i in range(2) :
+            for i in range(int(math.log2(self.n_res))) :
                 x = conv(x, channel*2, kernel=3, stride=2, pad=1, pad_type='reflect', scope='conv_'+str(i))
                 x = instance_norm(x, scope='ins_norm_'+str(i))
                 x = relu(x)
@@ -146,7 +151,7 @@ class UGATIT(object) :
                 x = adaptive_ins_layer_resblock(x, channel, gamma, beta, smoothing=self.smoothing, scope='adaptive_resblock' + str(i))
 
             # Up-Sampling
-            for i in range(2) :
+            for i in range(int(math.log2(self.n_res))) :
                 x = up_sample(x, scale_factor=2)
                 x = conv(x, channel//2, kernel=3, stride=1, pad=1, pad_type='reflect', scope='up_conv_'+str(i))
                 x = layer_instance_norm(x, scope='layer_ins_norm_'+str(i))
@@ -342,7 +347,7 @@ class UGATIT(object) :
     def build_model(self):
         if self.phase == 'train' :
             self.lr = tf.placeholder(tf.float32, name='learning_rate')
-
+            self.manual_d_loss = tf.placeholder(tf.float32, name='manual_d_loss')
 
             """ Input Image"""
             Image_Data_Class = ImageData(self.img_size, self.img_ch, self.augment_flag)
@@ -352,8 +357,8 @@ class UGATIT(object) :
 
 
             gpu_device = '/gpu:0'
-            trainA = trainA.apply(shuffle_and_repeat(self.dataset_num)).apply(map_and_batch(Image_Data_Class.image_processing, self.batch_size, num_parallel_batches=16, drop_remainder=True)).apply(prefetch_to_device(gpu_device, None))
-            trainB = trainB.apply(shuffle_and_repeat(self.dataset_num)).apply(map_and_batch(Image_Data_Class.image_processing, self.batch_size, num_parallel_batches=16, drop_remainder=True)).apply(prefetch_to_device(gpu_device, None))
+            trainA = trainA.apply(shuffle_and_repeat(self.dataset_num)).apply(map_and_batch(Image_Data_Class.image_processing, self.batch_size, num_parallel_batches=16, drop_remainder=True)).apply(prefetch_to_device(gpu_device))
+            trainB = trainB.apply(shuffle_and_repeat(self.dataset_num)).apply(map_and_batch(Image_Data_Class.image_processing, self.batch_size, num_parallel_batches=16, drop_remainder=True)).apply(prefetch_to_device(gpu_device))
 
 
             trainA_iterator = trainA.make_one_shot_iterator()
@@ -375,6 +380,14 @@ class UGATIT(object) :
             real_A_logit, real_A_cam_logit, real_B_logit, real_B_cam_logit = self.discriminate_real(self.domain_A, self.domain_B)
             fake_A_logit, fake_A_cam_logit, fake_B_logit, fake_B_cam_logit = self.discriminate_fake(x_ba, x_ab)
 
+            tf.print("real_A_logit: ", real_A_logit)
+            tf.print("real_A_cam_logit: ", real_A_cam_logit)
+            tf.print("real_B_logit: ", real_B_logit)
+            tf.print("real_B_cam_logit: ", real_B_cam_logit)
+            tf.print("fake_A_logit: ", fake_A_logit)
+            tf.print("fake_A_cam_logit: ", fake_A_cam_logit)
+            tf.print("fake_B_logit: ", fake_B_logit)
+            tf.print("fake_B_cam_logit: ", fake_B_cam_logit)
 
             """ Define Loss """
             if self.gan_type.__contains__('wgan') or self.gan_type == 'dragan' :
@@ -388,7 +401,6 @@ class UGATIT(object) :
             G_ad_loss_B = (generator_loss(self.gan_type, fake_B_logit) + generator_loss(self.gan_type, fake_B_cam_logit))
 
             self.fool_discriminator_counter = tf.placeholder(tf.int32, name = "fool_discriminator_counter")
-            # Every 100 iterations, we introduce noise to discriminator, so the generator loss can catch up discriminator loss.
             fool_dis = tf.cast((self.fool_discriminator_counter % 100 == 0), tf.bool)
             D_ad_loss_A = tf.cond(fool_dis, lambda: (discriminator_loss(self.gan_type, fake_A_logit, real_A_logit) + discriminator_loss(self.gan_type, fake_A_cam_logit, real_A_cam_logit) + GP_A + GP_CAM_A), lambda: (discriminator_loss(self.gan_type, real_A_logit, fake_A_logit) + discriminator_loss(self.gan_type, real_A_cam_logit, fake_A_cam_logit) + GP_A + GP_CAM_A))
             D_ad_loss_B = tf.cond(fool_dis, lambda: (discriminator_loss(self.gan_type, fake_B_logit, real_B_logit) + discriminator_loss(self.gan_type, fake_B_cam_logit, real_B_cam_logit) + GP_B + GP_CAM_B), lambda: (discriminator_loss(self.gan_type, real_B_logit, fake_B_logit) + discriminator_loss(self.gan_type, real_B_cam_logit, fake_B_cam_logit) + GP_B + GP_CAM_B))
@@ -426,7 +438,7 @@ class UGATIT(object) :
             Discriminator_B_loss = self.adv_weight * D_ad_loss_B
 
             self.Generator_loss = Generator_A_loss + Generator_B_loss + regularization_loss('generator')
-            self.Discriminator_loss = Discriminator_A_loss + Discriminator_B_loss + regularization_loss('discriminator')
+            self.Discriminator_loss = Discriminator_A_loss + Discriminator_B_loss + regularization_loss('discriminator') + self.manual_d_loss 
 
 
             """ Result Image """
@@ -531,17 +543,30 @@ class UGATIT(object) :
                 train_feed_dict = {
                     self.lr : lr
                 }
-                # discriminator_counter is included for adding noise.
+                '''
+                if fool_discriminator_ctr % 500 == 0:
+                    train_feed_dict_d = {
+                        self.lr : lr, #/100
+                        self.fool_discriminator_counter : fool_discriminator_ctr,
+                        self.manual_d_loss : 50
+                    }
+                else :
+                    train_feed_dict_d = {
+                        self.lr : lr,
+                        self.fool_discriminator_counter : fool_discriminator_ctr,
+                        self.manual_d_loss : 0
+                    }
+                '''
                 train_feed_dict_d = {
-                    self.lr : lr, #/100
-                    self.fool_discriminator_counter : fool_discriminator_ctr
+                    self.lr : lr,
+                    self.fool_discriminator_counter : fool_discriminator_ctr,
+                    self.manual_d_loss : 0
                 }
-
                 # Update D
                 _, d_loss, summary_str = self.sess.run([self.D_optim,
                                                         self.Discriminator_loss, self.D_loss], feed_dict = train_feed_dict_d)
                 self.writer.add_summary(summary_str, counter)
-                print("fool_discriminator : " + str(fool_discriminator_ctr))
+                # print("fool_discriminator : " + str(fool_discriminator_ctr) + "d_manual_loss : " + str(self.manual_d_loss))
                 fool_discriminator_ctr += 1
 
                 # Update G
@@ -556,6 +581,7 @@ class UGATIT(object) :
 
                 # display training status
                 counter += 1
+
                 if g_loss == None :
                     g_loss = past_g_loss
                 print("Epoch: [%2d] [%5d/%5d] time: %4.4f d_loss: %.8f, g_loss: %.8f" % (epoch, idx, self.iteration, time.time() - start_time, d_loss, g_loss))
@@ -614,6 +640,13 @@ class UGATIT(object) :
         self.saver.save(self.sess, os.path.join(checkpoint_dir, self.model_name + '.model'), global_step=step)
 
     def load(self, checkpoint_dir):
+        if self.use_pretrained:
+            ckpt = tf.train.get_checkpoint_state("checkpoint/UGATIT_selfie2anime_lsgan_4resblock_6dis_1_1_10_10_1000_sn_smoothing")
+            if ckpt and ckpt.model_checkpoint_path:
+                print(" [*] Success to read Pre-trained model")
+                self.saver.restore(self.sess, ckpt.model_checkpoint_path)
+                counter = int(ckpt.model_checkpoint_path.split('-')[-1])
+                return True, 0
         print(" [*] Reading checkpoints...")
         checkpoint_dir = os.path.join(checkpoint_dir, self.model_dir)
         print("checkpoint_dir" + checkpoint_dir)

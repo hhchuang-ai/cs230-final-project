@@ -48,6 +48,8 @@ def parse_args():
     parser.add_argument('--sample_dir', type=str, default='samples',
                         help='Directory name to save the samples on training')
 
+    # Below are new arg
+    parser.add_argument('--use_pretrained', type=str2bool, default=False, help='Use pre-trained model')
     return check_args(parser.parse_args())
 
 """checking arguments"""
@@ -75,6 +77,8 @@ def check_args(args):
         assert args.batch_size >= 1
     except:
         print('batch size must be larger than or equal to one')
+    # --n_res
+    # TODO check n_res is power of 2
     return args
 
 """main"""
@@ -82,9 +86,7 @@ def main():
     # parse arguments
     args = parse_args()
     if args is None:
-      print("no args")
       exit()
-    
 
     # open session
     with tf.Session(config=tf.ConfigProto(allow_soft_placement=True)) as sess:
