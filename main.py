@@ -82,7 +82,9 @@ def main():
     # parse arguments
     args = parse_args()
     if args is None:
+      print("no args")
       exit()
+    
 
     # open session
     with tf.Session(config=tf.ConfigProto(allow_soft_placement=True)) as sess:
