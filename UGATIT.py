@@ -476,7 +476,7 @@ class UGATIT(object) :
                     #self.real_A = self.domain_A
                     self.real_A.append(self.domain_A)
                     #self.real_B = self.domain_B
-                    self._real_B.append(self.domain_B)
+                    self.real_B.append(self.domain_B)
 
 
                     """ Training """
@@ -665,6 +665,7 @@ class UGATIT(object) :
                                                          self.adv_weight, self.cycle_weight, self.identity_weight, self.cam_weight, sn, smoothing)
 
     def assign_to_device(self, device, ps_device='/cpu:0'):
+        PS_OPS = ['Variable', 'VariableV2', 'AutoReloadVariable']
         def _assign(op):
             node_def = op if isinstance(op, tf.NodeDef) else op.node_def
             if node_def.op in PS_OPS:
