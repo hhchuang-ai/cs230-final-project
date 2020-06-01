@@ -5,6 +5,7 @@ import time
 import math
 import sys
 from tensorflow.contrib.data import prefetch_to_device, shuffle_and_repeat, map_and_batch
+from tensorflow.python.client import device_lib
 import numpy as np
 
 class UGATIT(object) :
@@ -344,6 +345,10 @@ class UGATIT(object) :
 
         return sum(GP), sum(cam_GP)
 
+    def get_available_gpus(self):
+        local_device_protos = device_lib.list_local_devices()
+        return [x.name for x in local_device_protos if x.device_type == 'GPU']
+
     def build_model(self):
         if self.phase == 'train' :
             self.lr = tf.placeholder(tf.float32, name='learning_rate')
@@ -378,10 +383,14 @@ class UGATIT(object) :
 
             # TODO(jhhuang): revisit the for-loop
             reuse_vars = False
-            for i in range(8):
-                with tf.device(self.assign_to_device('/gpu:{}'.format(i), ps_device='/cpu:0')):
-                    trainA_ = trainA.shard(8, i)
-                    trainB_ = trainB.shard(8, i)
+            available_gpus = get_available_gpus()
+            num_gpus = len(available_gpus)
+            print(str(available_gpus))
+            for i in range(num_gpus):
+                print("Current GPU: " + str(available_gpus[i]))
+                with tf.device(self.assign_to_device(available_gpus[i], ps_device='/cpu:0')):
+                    trainA_ = trainA.shard(num_gpus, i)
+                    trainB_ = trainB.shard(num_gpus, i)
 
                     #gpu_device = '/gpu:0'
                     #trainA = trainA.apply(shuffle_and_repeat(self.dataset_num)).apply(map_and_batch(Image_Data_Class.image_processing, self.batch_size, num_parallel_batches=16, drop_remainder=True)).apply(prefetch_to_device(gpu_device)).as_numpy_iterator()
