@@ -381,11 +381,11 @@ class UGATIT(object) :
             for i in range(8):
                 with tf.device(self.assign_to_device('/gpu:{}'.format(i), ps_device='/cpu:0')):
                     if i < 7:
-                        trainA_ = trainA[i * batch_size: (i+1) * batch_size]
-                        trainB_ = trainB[i * batch_size: (i+1) * batch_size]
+                        trainA_ = trainA[i * self.batch_size: (i+1) * self.batch_size]
+                        trainB_ = trainB[i * self.batch_size: (i+1) * self.batch_size]
                     else :
-                        trainA_ = trainA[ i * batch_size: ] 
-                        trainB_ = trainB[ i * batch_size: ]
+                        trainA_ = trainA[ i * self.batch_size: ] 
+                        trainB_ = trainB[ i * self.batch_size: ]
 
                     trainA_iterator = trainA_.make_one_shot_iterator()
                     trainB_iterator = trainB_.make_one_shot_iterator()
