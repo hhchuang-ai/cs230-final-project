@@ -379,7 +379,7 @@ class UGATIT(object) :
 
             # TODO(jhhuang): revisit the for-loop
             for i in range(8):
-                with tf.device(assign_to_device('/gpu:{}'.format(i), ps_device='/cpu:0')):
+                with tf.device(self.assign_to_device('/gpu:{}'.format(i), ps_device='/cpu:0')):
                     if i < 7:
                         trainA_ = trainA[i * batch_size: (i+1) * batch_size]
                         trainB_ = trainB[i * batch_size: (i+1) * batch_size]
