@@ -500,6 +500,10 @@ class UGATIT(object) :
             self.Generator_loss = tf.reduce_mean(self.Generator_loss_total)
             self.Discriminator_loss = tf.reduce_mean(self.Discriminator_loss_total)
 
+            print("G_vars : ")
+            for elemnt in G_vars:
+                print("element from G_vars : " + str(element))
+
             self.G_optim = tf.train.AdamOptimizer(self.lr, beta1=0.5, beta2=0.999).minimize(self.Generator_loss, var_list=G_vars)
             #self.G_optim.append(tf.train.AdamOptimizer(self.lr, beta1=0.5, beta2=0.999).minimize(self.Generator_loss, var_list=G_vars))
             self.D_optim = tf.train.AdamOptimizer(self.lr, beta1=0.5, beta2=0.999).minimize(self.Discriminator_loss, var_list=D_vars)
