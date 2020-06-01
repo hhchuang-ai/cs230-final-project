@@ -290,9 +290,9 @@ class UGATIT(object) :
 
         return out, cam
 
-    def discriminate_real(self, x_A, x_B, reuse_var):
-        real_A_logit, real_A_cam_logit, _, _ = self.discriminator(x_A, reuse=reuse_var, scope="discriminator_A")
-        real_B_logit, real_B_cam_logit, _, _ = self.discriminator(x_B, reuse=reuse_var, scope="discriminator_B")
+    def discriminate_real(self, x_A, x_B, reuse):
+        real_A_logit, real_A_cam_logit, _, _ = self.discriminator(x_A, reuse=reuse, scope="discriminator_A")
+        real_B_logit, real_B_cam_logit, _, _ = self.discriminator(x_B, reuse=reuse, scope="discriminator_B")
 
         return real_A_logit, real_A_cam_logit, real_B_logit, real_B_cam_logit
 
