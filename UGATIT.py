@@ -354,7 +354,7 @@ class UGATIT(object) :
 
             # All optimized variables
             # Discriminator
-            self.D_optim = []
+            #self.D_optim = []
             self.Discriminator_loss = []
             self.D_loss = []
 
@@ -363,7 +363,7 @@ class UGATIT(object) :
             self.real_B = []
             self.fake_A = []
             self.fake_B = []
-            self.G_optim = []
+            #self.G_optim = []
             self.Generator_loss = []
             self.G_loss = []
 
@@ -484,10 +484,10 @@ class UGATIT(object) :
                     G_vars = [var for var in t_vars if 'generator' in var.name]
                     D_vars = [var for var in t_vars if 'discriminator' in var.name]
 
-                    #self.G_optim = tf.train.AdamOptimizer(self.lr, beta1=0.5, beta2=0.999).minimize(self.Generator_loss, var_list=G_vars)
-                    self.G_optim.append(tf.train.AdamOptimizer(self.lr, beta1=0.5, beta2=0.999).minimize(self.Generator_loss, var_list=G_vars))
-                    #self.D_optim = tf.train.AdamOptimizer(self.lr, beta1=0.5, beta2=0.999).minimize(self.Discriminator_loss, var_list=D_vars)
-                    self.D_optim.append(tf.train.AdamOptimizer(self.lr, beta1=0.5, beta2=0.999).minimize(self.Discriminator_loss, var_list=D_vars))
+                    self.G_optim = tf.train.AdamOptimizer(self.lr, beta1=0.5, beta2=0.999).minimize(self.Generator_loss, var_list=G_vars)
+                    #self.G_optim.append(tf.train.AdamOptimizer(self.lr, beta1=0.5, beta2=0.999).minimize(self.Generator_loss, var_list=G_vars))
+                    self.D_optim = tf.train.AdamOptimizer(self.lr, beta1=0.5, beta2=0.999).minimize(self.Discriminator_loss, var_list=D_vars)
+                    #self.D_optim.append(tf.train.AdamOptimizer(self.lr, beta1=0.5, beta2=0.999).minimize(self.Discriminator_loss, var_list=D_vars))
 
                     """" Summary """
                     self.all_G_loss = tf.summary.scalar("Generator_loss", self.Generator_loss)
