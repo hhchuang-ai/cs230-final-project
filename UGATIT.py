@@ -678,6 +678,8 @@ class UGATIT(object) :
 
     def compute_average_loss(self, loss):
         Sum = sum(loss) 
+        if len(loss) == 0:
+            return 0
         return Sum/len(loss) 
     
     def assign_to_device(self, device, ps_device='/cpu:0'):
