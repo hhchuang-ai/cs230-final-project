@@ -396,20 +396,20 @@ class UGATIT(object) :
                     #trainA = trainA.apply(shuffle_and_repeat(self.dataset_num)).apply(map_and_batch(Image_Data_Class.image_processing, self.batch_size, num_parallel_batches=16, drop_remainder=True)).apply(prefetch_to_device(gpu_device)).as_numpy_iterator()
                     #trainB = trainB.apply(shuffle_and_repeat(self.dataset_num)).apply(map_and_batch(Image_Data_Class.image_processing, self.batch_size, num_parallel_batches=16, drop_remainder=True)).apply(prefetch_to_device(gpu_device)).as_numpy_iterator()
 
-                    self.domain_A = trainA_iterator.get_next()
-                    self.domain_B = trainB_iterator.get_next()
+                    domain_A = trainA_iterator.get_next()
+                    domain_B = trainB_iterator.get_next()
 
                     """ Define Generator, Discriminator """
-                    x_ab, cam_ab = self.generate_a2b(self.domain_A, reuse=reuse_vars) # real a
-                    x_ba, cam_ba = self.generate_b2a(self.domain_B, reuse=reuse_vars) # real b
+                    x_ab, cam_ab = self.generate_a2b(domain_A, reuse=reuse_vars) # real a
+                    x_ba, cam_ba = self.generate_b2a(domain_B, reuse=reuse_vars) # real b
 
                     x_aba, _ = self.generate_b2a(x_ab, reuse=True) # real b
                     x_bab, _ = self.generate_a2b(x_ba, reuse=True) # real a
 
-                    x_aa, cam_aa = self.generate_b2a(self.domain_A, reuse=True) # fake b
-                    x_bb, cam_bb = self.generate_a2b(self.domain_B, reuse=True) # fake a
+                    x_aa, cam_aa = self.generate_b2a(domain_A, reuse=True) # fake b
+                    x_bb, cam_bb = self.generate_a2b(domain_B, reuse=True) # fake a
 
-                    real_A_logit, real_A_cam_logit, real_B_logit, real_B_cam_logit = self.discriminate_real(self.domain_A, self.domain_B, reuse=reuse_vars)
+                    real_A_logit, real_A_cam_logit, real_B_logit, real_B_cam_logit = self.discriminate_real(domain_A, domain_B, reuse=reuse_vars)
                     fake_A_logit, fake_A_cam_logit, fake_B_logit, fake_B_cam_logit = self.discriminate_fake(x_ba, x_ab)
 
                     tf.print("real_A_logit: ", real_A_logit)
@@ -423,8 +423,8 @@ class UGATIT(object) :
 
                     """ Define Loss """
                     if self.gan_type.__contains__('wgan') or self.gan_type == 'dragan' :
-                        GP_A, GP_CAM_A = self.gradient_panalty(real=self.domain_A, fake=x_ba, scope="discriminator_A")
-                        GP_B, GP_CAM_B = self.gradient_panalty(real=self.domain_B, fake=x_ab, scope="discriminator_B")
+                        GP_A, GP_CAM_A = self.gradient_panalty(real=domain_A, fake=x_ba, scope="discriminator_A")
+                        GP_B, GP_CAM_B = self.gradient_panalty(real=domain_B, fake=x_ab, scope="discriminator_B")
                     else :
                         GP_A, GP_CAM_A  = 0, 0
                         GP_B, GP_CAM_B = 0, 0
@@ -441,11 +441,11 @@ class UGATIT(object) :
                     #    D_ad_loss_B = (discriminator_loss(self.gan_type, real_B_logit, fake_B_logit) + discriminator_loss(self.gan_type, real_B_cam_logit, fake_B_cam_logit) + GP_B + GP_CAM_B)
                     #self.fool_discriminator_counter += 1
 
-                    reconstruction_A = L1_loss(x_aba, self.domain_A) # reconstruction
-                    reconstruction_B = L1_loss(x_bab, self.domain_B) # reconstruction
+                    reconstruction_A = L1_loss(x_aba, domain_A) # reconstruction
+                    reconstruction_B = L1_loss(x_bab, domain_B) # reconstruction
 
-                    identity_A = L1_loss(x_aa, self.domain_A)
-                    identity_B = L1_loss(x_bb, self.domain_B)
+                    identity_A = L1_loss(x_aa, domain_A)
+                    identity_B = L1_loss(x_bb, domain_B)
 
                     cam_A = cam_loss(source=cam_ba, non_source=cam_aa)
                     cam_B = cam_loss(source=cam_ab, non_source=cam_bb)
@@ -476,14 +476,14 @@ class UGATIT(object) :
                     reuse_vars = True
 
             """ Result Image """
-            self.fake_A = x_ba
+            #self.fake_A = x_ba
             #self.fake_A.append(x_ba)
-            self.fake_B = x_ab
+            #self.fake_B = x_ab
             #self.fake_B.append(x_ab)
 
-            self.real_A = self.domain_A
+            #self.real_A = self.domain_A
             #self.real_A.append(self.domain_A)
-            self.real_B = self.domain_B
+            #self.real_B = self.domain_B
             #self.real_B.append(self.domain_B)
 
 
@@ -617,8 +617,8 @@ class UGATIT(object) :
                 # Update G
                 g_loss = None
                 if (counter - 1) % self.n_critic == 0 :
-                    batch_A_images, batch_B_images, fake_A, fake_B, _, g_loss, summary_str = self.sess.run([self.real_A, self.real_B,
-                                                                                                            self.fake_A, self.fake_B,
+                    batch_A_images, batch_B_images, fake_A, fake_B, _, g_loss, summary_str = self.sess.run([#self.real_A, self.real_B,
+                                                                                                            #self.fake_A, self.fake_B,
                                                                                                             self.G_optim,
                                                                                                             self.Generator_loss, self.G_loss], feed_dict = train_feed_dict)
                     self.writer.add_summary(summary_str, counter)
