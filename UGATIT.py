@@ -377,6 +377,7 @@ class UGATIT(object) :
             trainB = trainB.apply(shuffle_and_repeat(self.dataset_num)).apply(map_and_batch(Image_Data_Class.image_processing, self.batch_size, num_parallel_batches=16, drop_remainder=True))#.apply(prefetch_to_device(gpu_device))
 
             # TODO(jhhuang): revisit the for-loop
+            reuse_vars = False
             for i in range(8):
                 with tf.device(self.assign_to_device('/gpu:{}'.format(i), ps_device='/cpu:0')):
                     trainA_ = trainA.shard(8, i)
@@ -393,8 +394,8 @@ class UGATIT(object) :
                     self.domain_B = trainB_iterator.get_next()
 
                     """ Define Generator, Discriminator """
-                    x_ab, cam_ab = self.generate_a2b(self.domain_A) # real a
-                    x_ba, cam_ba = self.generate_b2a(self.domain_B) # real b
+                    x_ab, cam_ab = self.generate_a2b(self.domain_A, reuse=reuse_vars) # real a
+                    x_ba, cam_ba = self.generate_b2a(self.domain_B, reuse=reuse_vars) # real b
 
                     x_aba, _ = self.generate_b2a(x_ab, reuse=True) # real b
                     x_bab, _ = self.generate_a2b(x_ba, reuse=True) # real a
@@ -466,6 +467,7 @@ class UGATIT(object) :
                     self.Generator_loss_total.append(Generator_A_loss + Generator_B_loss + regularization_loss('generator'))
                     self.Discriminator_loss = Discriminator_A_loss + Discriminator_B_loss + regularization_loss('discriminator') + self.manual_d_loss 
                     self.Discriminator_loss_total.append(Discriminator_A_loss + Discriminator_B_loss + regularization_loss('discriminator') + self.manual_d_loss)
+                    reuse_vars = True
 
             """ Result Image """
             self.fake_A = x_ba
