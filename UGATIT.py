@@ -662,6 +662,15 @@ class UGATIT(object) :
                                                          self.n_critic,
                                                          self.adv_weight, self.cycle_weight, self.identity_weight, self.cam_weight, sn, smoothing)
 
+    def assign_to_device(self, device, ps_device='/cpu:0'):
+        def _assign(op):
+            node_def = op if isinstance(op, tf.NodeDef) else op.node_def
+            if node_def.op in PS_OPS:
+                return ps_device
+            else:
+                return device
+        return _assign
+    
     def save(self, checkpoint_dir, step):
         checkpoint_dir = os.path.join(checkpoint_dir, self.model_dir)
 
