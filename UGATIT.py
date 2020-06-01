@@ -108,7 +108,7 @@ class UGATIT(object) :
 
     def generator(self, x_init, reuse=False, scope="generator"):
         channel = self.ch
-        with tf.variable_scope(scope, reuse=reuse) as scope:
+        with tf.variable_scope(scope, reuse=reuse) as generator_scope:
             x = conv(x_init, channel, kernel=7, stride=1, pad=3, pad_type='reflect', scope='conv')
             x = instance_norm(x, scope='ins_norm')
             x = relu(x)
@@ -164,7 +164,7 @@ class UGATIT(object) :
             x = conv(x, channels=3, kernel=7, stride=1, pad=3, pad_type='reflect', scope='G_logit')
             x = tanh(x)
 
-            scope.reuse_variables()
+            generator_scope.reuse_variables()
 
             return x, cam_logit, heatmap
 
@@ -195,14 +195,14 @@ class UGATIT(object) :
     def discriminator(self, x_init, reuse=False, scope="discriminator"):
         D_logit = []
         D_CAM_logit = []
-        with tf.variable_scope(scope, reuse=reuse) as scope:
+        with tf.variable_scope(scope, reuse=reuse) as discriminator_scope:
             local_x, local_cam, local_heatmap = self.discriminator_local(x_init, reuse=reuse, scope='local')
             global_x, global_cam, global_heatmap = self.discriminator_global(x_init, reuse=reuse, scope='global')
 
             D_logit.extend([local_x, global_x])
             D_CAM_logit.extend([local_cam, global_cam])
 
-            scope.reuse_variables()
+            discriminator_scope.reuse_variables()
 
             return D_logit, D_CAM_logit, local_heatmap, global_heatmap
 
