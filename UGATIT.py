@@ -355,17 +355,17 @@ class UGATIT(object) :
             # All optimized variables
             # Discriminator
             #self.D_optim = []
-            self.Discriminator_loss = []
-            self.D_loss = []
+            self.Discriminator_loss_total = []
+            #self.D_loss = []
 
             # Generator
-            self.real_A = []
-            self.real_B = []
-            self.fake_A = []
-            self.fake_B = []
+            #self.real_A = []
+            #self.real_B = []
+            #self.fake_A = []
+            #self.fake_B = []
             #self.G_optim = []
-            self.Generator_loss = []
-            self.G_loss = []
+            self.Generator_loss_total = []
+            #self.G_loss = []
 
             # TODO(jhhuang): we should change how we load data here
             trainA = tf.data.Dataset.from_tensor_slices(self.trainA_dataset)
@@ -462,71 +462,75 @@ class UGATIT(object) :
                     Discriminator_A_loss = self.adv_weight * D_ad_loss_A
                     Discriminator_B_loss = self.adv_weight * D_ad_loss_B
 
-                    #self.Generator_loss = Generator_A_loss + Generator_B_loss + regularization_loss('generator')
-                    self.Generator_loss.append(Generator_A_loss + Generator_B_loss + regularization_loss('generator'))
-                    #self.Discriminator_loss = Discriminator_A_loss + Discriminator_B_loss + regularization_loss('discriminator') + self.manual_d_loss 
-                    self.Discriminator_loss.append(Discriminator_A_loss + Discriminator_B_loss + regularization_loss('discriminator') + self.manual_d_loss)
+                    self.Generator_loss = Generator_A_loss + Generator_B_loss + regularization_loss('generator')
+                    self.Generator_loss_total.append(Generator_A_loss + Generator_B_loss + regularization_loss('generator'))
+                    self.Discriminator_loss = Discriminator_A_loss + Discriminator_B_loss + regularization_loss('discriminator') + self.manual_d_loss 
+                    self.Discriminator_loss_total.append(Discriminator_A_loss + Discriminator_B_loss + regularization_loss('discriminator') + self.manual_d_loss)
 
-                    """ Result Image """
-                    #self.fake_A = x_ba
-                    self.fake_A.append(x_ba)
-                    #self.fake_B = x_ab
-                    self.fake_B.append(x_ab)
+            """ Result Image """
+            self.fake_A = x_ba
+            #self.fake_A.append(x_ba)
+            self.fake_B = x_ab
+            #self.fake_B.append(x_ab)
 
-                    #self.real_A = self.domain_A
-                    self.real_A.append(self.domain_A)
-                    #self.real_B = self.domain_B
-                    self.real_B.append(self.domain_B)
+            self.real_A = self.domain_A
+            #self.real_A.append(self.domain_A)
+            self.real_B = self.domain_B
+            #self.real_B.append(self.domain_B)
 
 
-                    """ Training """
-                    t_vars = tf.trainable_variables()
-                    G_vars = [var for var in t_vars if 'generator' in var.name]
-                    D_vars = [var for var in t_vars if 'discriminator' in var.name]
+            """ Training """
+            t_vars = tf.trainable_variables()
+            G_vars = [var for var in t_vars if 'generator' in var.name]
+            D_vars = [var for var in t_vars if 'discriminator' in var.name]
 
-                    self.G_optim = tf.train.AdamOptimizer(self.lr, beta1=0.5, beta2=0.999).minimize(self.Generator_loss, var_list=G_vars)
-                    #self.G_optim.append(tf.train.AdamOptimizer(self.lr, beta1=0.5, beta2=0.999).minimize(self.Generator_loss, var_list=G_vars))
-                    self.D_optim = tf.train.AdamOptimizer(self.lr, beta1=0.5, beta2=0.999).minimize(self.Discriminator_loss, var_list=D_vars)
-                    #self.D_optim.append(tf.train.AdamOptimizer(self.lr, beta1=0.5, beta2=0.999).minimize(self.Discriminator_loss, var_list=D_vars))
+            """ Compute Average Loss """
+            self.Generator_loss = compute_average_loss(self.Generator_loss_total)
+            self.Discriminator_loss = compute_average_loss(self.Discriminator_loss_total)
 
-                    """" Summary """
-                    self.all_G_loss = tf.summary.scalar("Generator_loss", self.Generator_loss)
-                    self.all_D_loss = tf.summary.scalar("Discriminator_loss", self.Discriminator_loss)
+            self.G_optim = tf.train.AdamOptimizer(self.lr, beta1=0.5, beta2=0.999).minimize(self.Generator_loss, var_list=G_vars)
+            #self.G_optim.append(tf.train.AdamOptimizer(self.lr, beta1=0.5, beta2=0.999).minimize(self.Generator_loss, var_list=G_vars))
+            self.D_optim = tf.train.AdamOptimizer(self.lr, beta1=0.5, beta2=0.999).minimize(self.Discriminator_loss, var_list=D_vars)
+            #self.D_optim.append(tf.train.AdamOptimizer(self.lr, beta1=0.5, beta2=0.999).minimize(self.Discriminator_loss, var_list=D_vars))
 
-                    self.G_A_loss = tf.summary.scalar("G_A_loss", Generator_A_loss)
-                    self.G_A_gan = tf.summary.scalar("G_A_gan", Generator_A_gan)
-                    self.G_A_cycle = tf.summary.scalar("G_A_cycle", Generator_A_cycle)
-                    self.G_A_identity = tf.summary.scalar("G_A_identity", Generator_A_identity)
-                    self.G_A_cam = tf.summary.scalar("G_A_cam", Generator_A_cam)
+            """" Summary """
+            self.all_G_loss = tf.summary.scalar("Generator_loss", self.Generator_loss)
+            self.all_D_loss = tf.summary.scalar("Discriminator_loss", self.Discriminator_loss)
 
-                    self.G_B_loss = tf.summary.scalar("G_B_loss", Generator_B_loss)
-                    self.G_B_gan = tf.summary.scalar("G_B_gan", Generator_B_gan)
-                    self.G_B_cycle = tf.summary.scalar("G_B_cycle", Generator_B_cycle)
-                    self.G_B_identity = tf.summary.scalar("G_B_identity", Generator_B_identity)
-                    self.G_B_cam = tf.summary.scalar("G_B_cam", Generator_B_cam)
+            self.G_A_loss = tf.summary.scalar("G_A_loss", Generator_A_loss)
+            self.G_A_gan = tf.summary.scalar("G_A_gan", Generator_A_gan)
+            self.G_A_cycle = tf.summary.scalar("G_A_cycle", Generator_A_cycle)
+            self.G_A_identity = tf.summary.scalar("G_A_identity", Generator_A_identity)
+            self.G_A_cam = tf.summary.scalar("G_A_cam", Generator_A_cam)
 
-                    self.D_A_loss = tf.summary.scalar("D_A_loss", Discriminator_A_loss)
-                    self.D_B_loss = tf.summary.scalar("D_B_loss", Discriminator_B_loss)
+            self.G_B_loss = tf.summary.scalar("G_B_loss", Generator_B_loss)
+            self.G_B_gan = tf.summary.scalar("G_B_gan", Generator_B_gan)
+            self.G_B_cycle = tf.summary.scalar("G_B_cycle", Generator_B_cycle)
+            self.G_B_identity = tf.summary.scalar("G_B_identity", Generator_B_identity)
+            self.G_B_cam = tf.summary.scalar("G_B_cam", Generator_B_cam)
 
-                    self.rho_var = []
-                    for var in tf.trainable_variables():
-                        if 'rho' in var.name:
-                            self.rho_var.append(tf.summary.histogram(var.name, var))
-                            self.rho_var.append(tf.summary.scalar(var.name + "_min", tf.reduce_min(var)))
-                            self.rho_var.append(tf.summary.scalar(var.name + "_max", tf.reduce_max(var)))
-                            self.rho_var.append(tf.summary.scalar(var.name + "_mean", tf.reduce_mean(var)))
+            self.D_A_loss = tf.summary.scalar("D_A_loss", Discriminator_A_loss)
+            self.D_B_loss = tf.summary.scalar("D_B_loss", Discriminator_B_loss)
 
-                    g_summary_list = [self.G_A_loss, self.G_A_gan, self.G_A_cycle, self.G_A_identity, self.G_A_cam,
-                                    self.G_B_loss, self.G_B_gan, self.G_B_cycle, self.G_B_identity, self.G_B_cam,
-                                    self.all_G_loss]
+            self.rho_var = []
+            for var in tf.trainable_variables():
+                if 'rho' in var.name:
+                    self.rho_var.append(tf.summary.histogram(var.name, var))
+                    self.rho_var.append(tf.summary.scalar(var.name + "_min", tf.reduce_min(var)))
+                    self.rho_var.append(tf.summary.scalar(var.name + "_max", tf.reduce_max(var)))
+                    self.rho_var.append(tf.summary.scalar(var.name + "_mean", tf.reduce_mean(var)))
 
-                    g_summary_list.extend(self.rho_var)
-                    d_summary_list = [self.D_A_loss, self.D_B_loss, self.all_D_loss]
+            g_summary_list = [self.G_A_loss, self.G_A_gan, self.G_A_cycle, self.G_A_identity, self.G_A_cam,
+                            self.G_B_loss, self.G_B_gan, self.G_B_cycle, self.G_B_identity, self.G_B_cam,
+                            self.all_G_loss]
 
-                    #self.G_loss = tf.summary.merge(g_summary_list)
-                    self.G_loss.append(tf.summary.merge(g_summary_list))
-                    #self.D_loss = tf.summary.merge(d_summary_list)
-                    self.D_loss.append(tf.summary.merge(d_summary_list))
+            g_summary_list.extend(self.rho_var)
+            d_summary_list = [self.D_A_loss, self.D_B_loss, self.all_D_loss]
+
+            self.G_loss = tf.summary.merge(g_summary_list)
+            #self.G_loss.append(tf.summary.merge(g_summary_list))
+            self.D_loss = tf.summary.merge(d_summary_list)
+            #self.D_loss.append(tf.summary.merge(d_summary_list))
 
         else :
             """ Test """
@@ -664,6 +668,10 @@ class UGATIT(object) :
                                                          self.n_critic,
                                                          self.adv_weight, self.cycle_weight, self.identity_weight, self.cam_weight, sn, smoothing)
 
+    def compute_average_loss(self, loss):
+        Sum = sum(loss) 
+        return Sum/len(loss) 
+    
     def assign_to_device(self, device, ps_device='/cpu:0'):
         PS_OPS = ['Variable', 'VariableV2', 'AutoReloadVariable']
         def _assign(op):
