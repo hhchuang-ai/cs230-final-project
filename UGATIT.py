@@ -383,7 +383,7 @@ class UGATIT(object) :
 
             # TODO(jhhuang): revisit the for-loop
             reuse_vars = False
-            available_gpus = get_available_gpus()
+            available_gpus = self.get_available_gpus()
             num_gpus = len(available_gpus)
             print(str(available_gpus))
             for i in range(num_gpus):
