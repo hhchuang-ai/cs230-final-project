@@ -379,15 +379,12 @@ class UGATIT(object) :
             # TODO(jhhuang): revisit the for-loop
             for i in range(8):
                 with tf.device(self.assign_to_device('/gpu:{}'.format(i), ps_device='/cpu:0')):
-                    trainA_ = trainA.shard(8, i)
-                    trainB_ = trainB.shard(8, i)
-
                     #gpu_device = '/gpu:0'
                     #trainA = trainA.apply(shuffle_and_repeat(self.dataset_num)).apply(map_and_batch(Image_Data_Class.image_processing, self.batch_size, num_parallel_batches=16, drop_remainder=True)).apply(prefetch_to_device(gpu_device)).as_numpy_iterator()
                     #trainB = trainB.apply(shuffle_and_repeat(self.dataset_num)).apply(map_and_batch(Image_Data_Class.image_processing, self.batch_size, num_parallel_batches=16, drop_remainder=True)).apply(prefetch_to_device(gpu_device)).as_numpy_iterator()
 
-                    trainA_iterator = trainA_.make_one_shot_iterator()
-                    trainB_iterator = trainB_.make_one_shot_iterator()
+                    trainA_iterator = trainA.make_one_shot_iterator()
+                    trainB_iterator = trainB.make_one_shot_iterator()
 
                     self.domain_A = trainA_iterator.get_next()
                     self.domain_B = trainB_iterator.get_next()
