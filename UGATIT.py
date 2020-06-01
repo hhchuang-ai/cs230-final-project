@@ -5,6 +5,7 @@ import time
 import math
 import sys
 from tensorflow.contrib.data import prefetch_to_device, shuffle_and_repeat, map_and_batch
+from tensorflow.python.client import device_lib
 import numpy as np
 
 class UGATIT(object) :
@@ -290,9 +291,9 @@ class UGATIT(object) :
 
         return out, cam
 
-    def discriminate_real(self, x_A, x_B):
-        real_A_logit, real_A_cam_logit, _, _ = self.discriminator(x_A, scope="discriminator_A")
-        real_B_logit, real_B_cam_logit, _, _ = self.discriminator(x_B, scope="discriminator_B")
+    def discriminate_real(self, x_A, x_B, reuse):
+        real_A_logit, real_A_cam_logit, _, _ = self.discriminator(x_A, reuse=reuse, scope="discriminator_A")
+        real_B_logit, real_B_cam_logit, _, _ = self.discriminator(x_B, reuse=reuse, scope="discriminator_B")
 
         return real_A_logit, real_A_cam_logit, real_B_logit, real_B_cam_logit
 
@@ -344,6 +345,10 @@ class UGATIT(object) :
 
         return sum(GP), sum(cam_GP)
 
+    def get_available_gpus(self):
+        local_device_protos = device_lib.list_local_devices()
+        return [x.name for x in local_device_protos if x.device_type == 'GPU']
+
     def build_model(self):
         if self.phase == 'train' :
             self.lr = tf.placeholder(tf.float32, name='learning_rate')
@@ -377,8 +382,15 @@ class UGATIT(object) :
             trainB = trainB.apply(shuffle_and_repeat(self.dataset_num)).apply(map_and_batch(Image_Data_Class.image_processing, self.batch_size, num_parallel_batches=16, drop_remainder=True))#.apply(prefetch_to_device(gpu_device))
 
             # TODO(jhhuang): revisit the for-loop
-            for i in range(8):
-                with tf.device(self.assign_to_device('/gpu:{}'.format(i), ps_device='/cpu:0')):
+            reuse_vars = False
+            available_gpus = self.get_available_gpus()
+            num_gpus = len(available_gpus)
+            print(str(available_gpus))
+            for i in range(num_gpus):
+                print("Current GPU: " + str(available_gpus[i]))
+                with tf.device(self.assign_to_device(available_gpus[i], ps_device='/cpu:0')):
+                    trainA_ = trainA.shard(num_gpus, i)
+                    trainB_ = trainB.shard(num_gpus, i)
                     #gpu_device = '/gpu:0'
                     #trainA = trainA.apply(shuffle_and_repeat(self.dataset_num)).apply(map_and_batch(Image_Data_Class.image_processing, self.batch_size, num_parallel_batches=16, drop_remainder=True)).apply(prefetch_to_device(gpu_device)).as_numpy_iterator()
                     #trainB = trainB.apply(shuffle_and_repeat(self.dataset_num)).apply(map_and_batch(Image_Data_Class.image_processing, self.batch_size, num_parallel_batches=16, drop_remainder=True)).apply(prefetch_to_device(gpu_device)).as_numpy_iterator()
@@ -390,8 +402,8 @@ class UGATIT(object) :
                     self.domain_B = trainB_iterator.get_next()
 
                     """ Define Generator, Discriminator """
-                    x_ab, cam_ab = self.generate_a2b(self.domain_A) # real a
-                    x_ba, cam_ba = self.generate_b2a(self.domain_B) # real b
+                    x_ab, cam_ab = self.generate_a2b(self.domain_A, reuse=reuse_vars) # real a
+                    x_ba, cam_ba = self.generate_b2a(self.domain_B, reuse=reuse_vars) # real b
 
                     x_aba, _ = self.generate_b2a(x_ab, reuse=True) # real b
                     x_bab, _ = self.generate_a2b(x_ba, reuse=True) # real a
@@ -399,7 +411,7 @@ class UGATIT(object) :
                     x_aa, cam_aa = self.generate_b2a(self.domain_A, reuse=True) # fake b
                     x_bb, cam_bb = self.generate_a2b(self.domain_B, reuse=True) # fake a
 
-                    real_A_logit, real_A_cam_logit, real_B_logit, real_B_cam_logit = self.discriminate_real(self.domain_A, self.domain_B)
+                    real_A_logit, real_A_cam_logit, real_B_logit, real_B_cam_logit = self.discriminate_real(self.domain_A, self.domain_B, reuse=reuse_vars)
                     fake_A_logit, fake_A_cam_logit, fake_B_logit, fake_B_cam_logit = self.discriminate_fake(x_ba, x_ab)
 
                     tf.print("real_A_logit: ", real_A_logit)
@@ -463,6 +475,7 @@ class UGATIT(object) :
                     self.Generator_loss_total.append(Generator_A_loss + Generator_B_loss + regularization_loss('generator'))
                     self.Discriminator_loss = Discriminator_A_loss + Discriminator_B_loss + regularization_loss('discriminator') + self.manual_d_loss 
                     self.Discriminator_loss_total.append(Discriminator_A_loss + Discriminator_B_loss + regularization_loss('discriminator') + self.manual_d_loss)
+                    reuse_vars = True
 
             """ Result Image """
             self.fake_A = x_ba
