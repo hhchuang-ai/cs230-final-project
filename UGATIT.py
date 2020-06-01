@@ -108,7 +108,7 @@ class UGATIT(object) :
 
     def generator(self, x_init, reuse=False, scope="generator"):
         channel = self.ch
-        with tf.variable_scope(scope, reuse=reuse) :
+        with tf.variable_scope(scope, reuse=reuse) as scope:
             x = conv(x_init, channel, kernel=7, stride=1, pad=3, pad_type='reflect', scope='conv')
             x = instance_norm(x, scope='ins_norm')
             x = relu(x)
@@ -163,6 +163,8 @@ class UGATIT(object) :
 
             x = conv(x, channels=3, kernel=7, stride=1, pad=3, pad_type='reflect', scope='G_logit')
             x = tanh(x)
+
+            scope.reuse_variables()
 
             return x, cam_logit, heatmap
 
@@ -469,9 +471,9 @@ class UGATIT(object) :
                     Discriminator_A_loss = self.adv_weight * D_ad_loss_A
                     Discriminator_B_loss = self.adv_weight * D_ad_loss_B
 
-                    self.Generator_loss = Generator_A_loss + Generator_B_loss + regularization_loss('generator')
+                    #self.Generator_loss = Generator_A_loss + Generator_B_loss + regularization_loss('generator')
                     self.Generator_loss_total.append(Generator_A_loss + Generator_B_loss + regularization_loss('generator'))
-                    self.Discriminator_loss = Discriminator_A_loss + Discriminator_B_loss + regularization_loss('discriminator') + self.manual_d_loss 
+                    #self.Discriminator_loss = Discriminator_A_loss + Discriminator_B_loss + regularization_loss('discriminator') + self.manual_d_loss 
                     self.Discriminator_loss_total.append(Discriminator_A_loss + Discriminator_B_loss + regularization_loss('discriminator') + self.manual_d_loss)
                     reuse_vars = True
 
