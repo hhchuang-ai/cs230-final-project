@@ -195,12 +195,14 @@ class UGATIT(object) :
     def discriminator(self, x_init, reuse=False, scope="discriminator"):
         D_logit = []
         D_CAM_logit = []
-        with tf.variable_scope(scope, reuse=reuse) :
+        with tf.variable_scope(scope, reuse=reuse) as scope:
             local_x, local_cam, local_heatmap = self.discriminator_local(x_init, reuse=reuse, scope='local')
             global_x, global_cam, global_heatmap = self.discriminator_global(x_init, reuse=reuse, scope='global')
 
             D_logit.extend([local_x, global_x])
             D_CAM_logit.extend([local_cam, global_cam])
+
+            scope.reuse_variables()
 
             return D_logit, D_CAM_logit, local_heatmap, global_heatmap
 
