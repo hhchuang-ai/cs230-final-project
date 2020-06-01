@@ -617,10 +617,14 @@ class UGATIT(object) :
                 # Update G
                 g_loss = None
                 if (counter - 1) % self.n_critic == 0 :
-                    batch_A_images, batch_B_images, fake_A, fake_B, _, g_loss, summary_str = self.sess.run([#self.real_A, self.real_B,
-                                                                                                            #self.fake_A, self.fake_B,
-                                                                                                            self.G_optim,
-                                                                                                            self.Generator_loss, self.G_loss], feed_dict = train_feed_dict)
+                    #batch_A_images, batch_B_images, fake_A, fake_B, _, g_loss, summary_str = self.sess.run([#self.real_A, self.real_B,
+                    #                                                                                        #self.fake_A, self.fake_B,
+                    #                                                                                        self.G_optim,
+                    #                                                                                        self.Generator_loss, self.G_loss], feed_dict = train_feed_dict)
+                    _, g_loss, summary_str = self.sess.run([#self.real_A, self.real_B,
+                                                            #self.fake_A, self.fake_B,
+                                                            self.G_optim,
+                                                            self.Generator_loss, self.G_loss], feed_dict = train_feed_dict)
                     self.writer.add_summary(summary_str, counter)
                     past_g_loss = g_loss
 
@@ -630,7 +634,7 @@ class UGATIT(object) :
                 if g_loss == None :
                     g_loss = past_g_loss
                 print("Epoch: [%2d] [%5d/%5d] time: %4.4f d_loss: %.8f, g_loss: %.8f" % (epoch, idx, self.iteration, time.time() - start_time, d_loss, g_loss))
-
+                """
                 if np.mod(idx+1, self.print_freq) == 0 :
                     save_images(batch_A_images, [self.batch_size, 1],
                                 './{}/real_A_{:03d}_{:05d}.png'.format(self.sample_dir, epoch, idx+1))
@@ -641,7 +645,7 @@ class UGATIT(object) :
                     #             './{}/fake_A_{:03d}_{:05d}.png'.format(self.sample_dir, epoch, idx+1))
                     save_images(fake_B, [self.batch_size, 1],
                                 './{}/fake_B_{:03d}_{:05d}.png'.format(self.sample_dir, epoch, idx+1))
-
+                """
                 if np.mod(idx + 1, self.save_freq) == 0:
                     self.save(self.checkpoint_dir, counter)
 
