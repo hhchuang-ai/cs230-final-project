@@ -485,8 +485,8 @@ class UGATIT(object) :
             D_vars = [var for var in t_vars if 'discriminator' in var.name]
 
             """ Compute Average Loss """
-            self.Generator_loss = compute_average_loss(self.Generator_loss_total)
-            self.Discriminator_loss = compute_average_loss(self.Discriminator_loss_total)
+            self.Generator_loss = self.compute_average_loss(self.Generator_loss_total)
+            self.Discriminator_loss = self.compute_average_loss(self.Discriminator_loss_total)
 
             self.G_optim = tf.train.AdamOptimizer(self.lr, beta1=0.5, beta2=0.999).minimize(self.Generator_loss, var_list=G_vars)
             #self.G_optim.append(tf.train.AdamOptimizer(self.lr, beta1=0.5, beta2=0.999).minimize(self.Generator_loss, var_list=G_vars))
