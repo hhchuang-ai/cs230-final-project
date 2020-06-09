@@ -1,4 +1,4 @@
-The original code only works for single GPU, so we want to modify it for multiple GPU. We create 2 instances for trainging the model fater. One is p2.xlarge(1 GPU) and another one is p3.16xlarge(8GPU). Ideally, we can have 8~10x speed in p3.16xlarge(8GPU) since the quantity and quality of GPUs in p3.16xlarge is better.
+The original code only works for single GPU, so we want to modify it for multiple GPU. We create 2 instances for training the model faster. One is p2.xlarge(1 GPU) and another one is p3.16xlarge(8GPU). Ideally, we can have 8~10x speed in p3.16xlarge(8GPU) since the quantity and quality of GPUs in p3.16xlarge is better.
 
 The changes are as following:
 * build model on each GPU. 
